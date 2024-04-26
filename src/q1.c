@@ -108,7 +108,7 @@ void printHelp(const char *command)
                 uart_puts(" -change databits: The changerble boundary for the databits are 8, 7, 6, 5 \n");
                 uart_puts(" -change paritybits: The changerble boundary for the parity bits are none, odd, even \n");
                 uart_puts(" -change stopbits: The changerble boundary for the stop bits are 1, and 2\n");
-                uart_puts(" -change handshaking: The changerble boundary for the handshaking are CTS or RTS\n");
+                uart_puts(" -change handshaking: The changerble boundary for the handshaking are CTS , RTS, and NONE\n");
             }
         }
         else
@@ -233,16 +233,13 @@ void printInfo()
     if (mbox_call(ADDR(mBuf), MBOX_CH_PROP))
     {
 
-        uart_puts("\nBoard Revision: \n");
+        uart_puts("Board Revision: \n");
         printRecision(mBuf[5]);
         uart_puts("\n");
         uart_puts("MAC Address: \n");
-
-        // uart_MAC(mBuf[9] ,mBuf[10]);
-        uart_hex(mBuf[9]);
-        uart_hex(mBuf[10]);
-
+        uart_displayMAC(mBuf[9],mBuf[10]);
         uart_puts("\n");
+        uart_setting();
     }
     else
     {
@@ -366,6 +363,8 @@ void changeUartSetting(const char *command)
     {
         handShaking += 12;
     }
+  
+
 
     uart_init(baudRate, stopbit, databit, paritybit, handShaking);
 }
@@ -415,9 +414,9 @@ void my_memset(void *str, int startIndex, int strLength)
 char *tab_complete(char currentCommand[], int index)
 {
     const char *commandList[] = {
-        "help", "clear", "selector", "showinfo", "change"};
+        "help", "clear", "setcolor", "showinfo", "change"};
 
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 5; i++)
     {
         if (my_strncmp(currentCommand, commandList[i], index) == 1)
         { // Here using 0 for match

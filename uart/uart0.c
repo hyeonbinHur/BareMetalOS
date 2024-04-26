@@ -33,7 +33,7 @@ void uart_init(const char *baud, const char *stop, const char *data, const char 
 
 	/* Setup GPIO pins 14 and 15 */
 
-	/* Set GPIO14 and GPIO15 to be pl011 TX/RX which is ALT0	*/
+	/* Set GPIO14 and GPIO15 to be pl011 TX/RX which is ALT0    */
 	r = GPFSEL1;
 	r &= ~((7 << 12) | (7 << 15));		// clear bits 17-12 (FSEL15, FSEL14)
 	r |= (0b100 << 12) | (0b100 << 15); // Set value 0b100 (select ALT0: TXD0/RXD0)
@@ -69,61 +69,23 @@ void uart_init(const char *baud, const char *stop, const char *data, const char 
 	/* Clear pending interrupts. */
 	UART0_ICR = 0x7FF;
 
-	/* Set integer & fractional part of Baud rate
-	Divider = UART_CLOCK/(16 * Baud)
-	Default UART_CLOCK = 48MHz (old firmware it was 3MHz);
-	Integer part register UART0_IBRD  = integer part of Divider
-	Fraction part register UART0_FBRD = (Fractional part * 64) + 0.5 */
-
-	// 115200 baud
-	// UART0_IBRD = 26;
-	// UART0_FBRD = 3;
-
 	uart_BaudRate(baud);
-	// uart_StopBit(stop);
-	uart_DataBit(data);
-	// uart_Parity(parity);
-	// uart_HandShaking(handshaking);
-
-	// //NEW: with UART_CLOCK = 4MHz as set by mailbox:
-	// //115200 baud
-	// UART0_IBRD = 2;
-	// UART0_FBRD = 11;
-
-	/* Set up the Line Control Register */
-	/* Enable FIFO */
-	/* Set length to 8 bit */
-	/* Defaults for other bit are No parity, 1 stop bit */
-	// UART0_LCRH = UART0_LCRH_FEN | UART0_LCRH_WLEN_8BIT;
-	// UART0_LCRH = (1 << 4) | (3 << 5);
+	
 
 	int devider = 16 * currentBaud;
-	double devider2 = (48000000.0 / devider);
-	int intPart = devider2 / 1;
-	float frPart = ((devider2 - intPart) * 64) + 0.5;
+	double devider2 = (48000000.0 / (float)devider);
+	int intPart = (int)devider2 / 1;
+	float frPart = ((devider2 - (float)intPart) * 64) + 0.5;
 
 	UART0_IBRD = intPart;
 	UART0_FBRD = frPart;
 
 	UART0_LCRH = (1 << 4);
 
-	UART0_LCRH &= ~(0b11 << 5);
-	if (currentDataBits == 8)
-	{
-		UART0_LCRH |= (3 << 5);
-	}
-	else if (currentDataBits == 7)
-	{
-		UART0_LCRH |= (2 << 5);
-	}
-	else if (currentDataBits == 6)
-	{
-		UART0_LCRH |= (1 << 5);
-	}
-	else if (currentDataBits == 5)
-	{
-		UART0_LCRH |= (0 << 5);
-	}
+	uart_StopBit(stop);
+	uart_DataBit(data);
+	uart_Parity(parity);
+	uart_HandShaking(handshaking);
 
 	/* Enable UART0, receive, and transmit */
 	UART0_CR = 0x301; // enable Tx, Rx, FIFO
@@ -231,58 +193,62 @@ void uart_dec(int num)
 	uart_puts(str);
 }
 
+void uart_displayMAC(unsigned int high, unsigned int low) {
+    // Start by processing the lower part first to match the original output order
+    for (int shift = 12; shift >= 0; shift -= 4) {
+        // Extract the highest 4-bit segment
+        char hex_char = (low >> shift) & 0xF;
+        // Convert numeric value to hexadecimal ASCII character
+        hex_char += (hex_char > 9) ? ('A' - 10) : '0';
+        uart_sendc(hex_char);
+
+        // Insert dash at every 8 bits, except at the end
+        if (shift % 8 == 0 && shift != 0) {
+            uart_sendc(':');
+        }
+    }
+
+    // Insert final dash between high and low parts
+    uart_sendc(':');
+
+    // Then process the high part
+    for (int shift = 28; shift >= 0; shift -= 4) {
+        // Extract the highest 4-bit segment
+        char hex_char = (high >> shift) & 0xF;
+        // Convert numeric value to hexadecimal ASCII character
+        hex_char += (hex_char > 9) ? ('A' - 10) : '0';
+        uart_sendc(hex_char);
+
+        // Insert dash every 8 bits
+        if (shift % 8 == 0 && shift != 0) {
+            uart_sendc(':');
+        }
+    }
+}
+
 void uart_BaudRate(const char *baud)
 {
 	if (my_strncmp(baud, "9600", 4) == 1)
 	{
 		currentBaud = 9600;
-		// UART0_IBRD = 312;
-		// UART0_FBRD = 33;
-		// uart_puts("The baud rates changed to 9600 \n ");
 	}
 	else if (my_strncmp(baud, "19200", 5) == 1)
 	{
 		currentBaud = 19200;
-		// UART0_IBRD = 156;
-		// UART0_FBRD = 17;
-		// uart_puts("The baud rates changed to 19200 \n");
 	}
 	else if (my_strncmp(baud, "38400", 5) == 1)
 	{
 		currentBaud = 38400;
-		// UART0_IBRD = 78;
-		// UART0_FBRD = 9;
-		// uart_puts("The baud rates changed to 38400 \n");
 	}
 	else if (my_strncmp(baud, "57600", 5) == 1)
 	{
 		currentBaud = 57600;
-		// UART0_IBRD = 52;
-		// UART0_FBRD = 6;
-		// uart_puts("The baud rates changed to 57600 \n ");
 	}
 	else if (my_strncmp(baud, "115200", 6) == 1)
 	{
 		currentBaud = 115200;
-		// UART0_IBRD = 26;
-		// UART0_FBRD = 3;
-		// uart_puts("The baud rates changed to 115200 \n");
 	}
-	else
-	{
-		// // set default as 115200
-		// int devider = 16 * currentBaud;
-		// double devider2 = (48000000.0 / devider);
-		// int intPart = devider2 / 1;
-		// float frPart = ((devider2 - intPart) * 64) + 0.5;
 
-		// UART0_IBRD = intPart;
-		// UART0_FBRD = frPart;
-		// if (my_strncmp(baud, "f", 1) != 1)
-		// {
-		// 	uart_puts("out of boundary bouadrates are typed \n");
-		// }
-	}
 }
 
 void uart_DataBit(const char *data)
@@ -291,59 +257,45 @@ void uart_DataBit(const char *data)
 	if (my_strncmp(data, "8", 1) == 1)
 	{
 		currentDataBits = 8;
-		// UART0_LCRH &= ~(0b11 << 5);
-		// UART0_LCRH |= UART0_LCRH_WLEN_8BIT;
-		// uart_puts("8 data bit has been seleted \n");
+		UART0_LCRH &= ~(0b11 << 5);
+		UART0_LCRH |= UART0_LCRH_WLEN_8BIT;
 	}
 	else if (my_strncmp(data, "7", 1) == 1)
 	{
 		currentDataBits = 7;
-
-		// UART0_LCRH &= ~(0b11 << 5);
-		// UART0_LCRH |= UART0_LCRH_WLEN_7BIT;
-		// uart_puts("7 data bit has been seleted \n");
+		UART0_LCRH &= ~(0b11 << 5);
+		UART0_LCRH |= UART0_LCRH_WLEN_7BIT;
 	}
 	else if (my_strncmp(data, "6", 1) == 1)
 	{
 		currentDataBits = 6;
-
-		// UART0_LCRH &= ~(0b11 << 5);
-		// UART0_LCRH |= UART0_LCRH_WLEN_6BIT;
-		// uart_puts("6 data bit has been seleted \n");
+		UART0_LCRH &= ~(0b11 << 5);
+		UART0_LCRH |= UART0_LCRH_WLEN_6BIT;
 	}
 	else if (my_strncmp(data, "5", 1) == 1)
 	{
 		currentDataBits = 5;
-
-		// UART0_LCRH &= ~(0b11 << 5);
-		// UART0_LCRH |= UART0_LCRH_WLEN_5BIT;
-		// uart_puts("5 data bit has been seleted \n");
+		UART0_LCRH |= UART0_LCRH_WLEN_5BIT;
 	}
 	else
 	{
-		// if (currentDataBits == 8)
-		// {
-		// 	UART0_LCRH &= ~(0b11 << 5);
-		// 	UART0_LCRH |= UART0_LCRH_WLEN_8BIT;
-		// }
-		// else if (currentDataBits == 7)
-		// {
+		if (currentDataBits == 8)
+		{
+			UART0_LCRH |= UART0_LCRH_WLEN_8BIT;
+		}
+		else if (currentDataBits == 7)
+		{
+			UART0_LCRH |= UART0_LCRH_WLEN_7BIT;
+		}
+		else if (currentDataBits == 6)
+		{
+			UART0_LCRH |= UART0_LCRH_WLEN_6BIT;
+		}
+		else if (currentDataBits == 5)
+		{
 
-		// 	UART0_LCRH &= ~(0b11 << 5);
-		// 	UART0_LCRH |= UART0_LCRH_WLEN_7BIT;
-		// }
-		// else if (currentDataBits == 6)
-		// {
-
-		// 	UART0_LCRH &= ~(0b11 << 5);
-		// 	UART0_LCRH |= UART0_LCRH_WLEN_6BIT;
-		// }
-		// else if (currentDataBits == 5)
-		// {
-
-		// 	UART0_LCRH &= ~(0b11 << 5);
-		// 	UART0_LCRH |= UART0_LCRH_WLEN_5BIT;
-		// }
+			UART0_LCRH |= UART0_LCRH_WLEN_5BIT;
+		}
 	}
 }
 void uart_StopBit(const char *stop)
@@ -352,14 +304,12 @@ void uart_StopBit(const char *stop)
 	{
 		currentStopBits = 1;
 		UART0_LCRH &= ~(0b1 << 3);
-		uart_puts("1 stop bit has been seleted \n");
 	}
 	else if (my_strncmp(stop, "2", 1) == 1)
 	{
 		currentStopBits = 2;
 		UART0_LCRH &= ~(0b1 << 3);
 		UART0_LCRH |= UART0_LCRH_STP2;
-		uart_puts("2 stop bit has been seleted \n");
 	}
 	else
 	{
@@ -372,61 +322,45 @@ void uart_StopBit(const char *stop)
 			UART0_LCRH &= ~(0b1 << 3);
 			UART0_LCRH |= UART0_LCRH_STP2;
 		}
-		if (my_strncmp(stop, "f", 1) != 1)
-		{
-			uart_puts("out of buondary of data bit has been typed\n");
-		}
+		
 	}
 }
 void uart_Parity(const char *parity)
 {
+
 	if (my_strncmp(parity, "none", 4) == 1)
 	{
 		currentParityBits = 0;
-		UART0_LCRH &= ~(0b1 << 1);
-		uart_puts("parity bit has been disabled \n");
+		UART0_LCRH &= ~UART0_LCRH_PEN;
 	}
 	else if (my_strncmp(parity, "odd", 3) == 1)
 	{
 		currentParityBits = 1;
-		UART0_LCRH &= ~(0b1 << 1);
-		UART0_LCRH |= (0b1 << 1);
-		UART0_LCRH &= ~(0b1 << 2);
-
-		uart_puts("odd parity bit has been seleted \n");
+		UART0_LCRH |= UART0_LCRH_PEN;
+		UART0_LCRH &= ~UART0_LCRH_EPS;
 	}
 	else if (my_strncmp(parity, "even", 4) == 1)
 	{
 		currentParityBits = 2;
-		UART0_LCRH &= ~(0b1 << 1);
-		UART0_LCRH |= (0b1 << 1);
-		UART0_LCRH &= ~(0b1 << 2);
-		UART0_LCRH |= (0b1 << 1);
-		uart_puts("even parity bit has been seleted \n");
+		UART0_LCRH |= UART0_LCRH_PEN;
+		UART0_LCRH |= UART0_LCRH_EPS;
 	}
 	else
 	{
 		if (currentParityBits == 1)
 		{
-			UART0_LCRH &= ~(0b1 << 1);
-			UART0_LCRH |= (0b1 << 1);
-			UART0_LCRH &= ~(0b1 << 2);
+			UART0_LCRH |= UART0_LCRH_PEN;
+			UART0_LCRH &= ~UART0_LCRH_EPS;
 		}
 		else if (currentParityBits == 2)
 		{
-			UART0_LCRH &= ~(0b1 << 1);
-			UART0_LCRH |= (0b1 << 1);
-			UART0_LCRH &= ~(0b1 << 2);
-			UART0_LCRH |= (0b1 << 1);
+			UART0_LCRH |= UART0_LCRH_PEN;
+			UART0_LCRH |= UART0_LCRH_EPS;
 		}
 		else if (currentParityBits == 0)
 		{
-			UART0_LCRH &= ~(0b1 << 1);
-		}
 
-		if (my_strncmp(parity, "f", 1) != 1)
-		{
-			uart_puts("invalid parity bit setting has been typed\n");
+			UART0_LCRH &= ~UART0_LCRH_PEN;
 		}
 	}
 }
@@ -438,31 +372,19 @@ void uart_HandShaking(const char *hand)
 		currentHandshaking = 1;
 		UART0_CR &= ~(0b1 << 15);
 		UART0_CR |= (0b1 << 15);
-		uart_puts("CTS handshaking has been selected \n");
 	}
 	else if (my_strncmp(hand, "RTS", 3) == 1)
 	{
 		currentHandshaking = 2;
 		UART0_CR &= ~(0b1 << 14);
 		UART0_CR |= (0b1 << 14);
-		uart_puts("RTS handshaking has been selected \n");
 	}
-	else if (my_strncmp(hand, "BOTH", 4) == 1)
-	{
-		currentHandshaking = 3;
-		UART0_CR &= ~(0b1 << 15);
-		UART0_CR |= (0b1 << 15);
-
-		UART0_CR &= ~(0b1 << 14);
-		UART0_CR |= (0b1 << 14);
-		uart_puts("both CTS and RTS handshaking has been selected \n");
-	}
+	
 	else if (my_strncmp(hand, "NONE", 4) == 1)
 	{
 		currentHandshaking = 0;
 		UART0_CR &= ~(0b1 << 15);
 		UART0_CR &= ~(0b1 << 14);
-		uart_puts("both CTS and RTS handshaking has been cleared \n");
 	}
 	else
 	{
@@ -481,17 +403,55 @@ void uart_HandShaking(const char *hand)
 			UART0_CR &= ~(0b1 << 14);
 			UART0_CR |= (0b1 << 14);
 		}
-		else if (currentHandshaking == 3)
-		{ // both setted
-			UART0_CR &= ~(0b1 << 15);
-			UART0_CR |= (0b1 << 15);
 
-			UART0_CR &= ~(0b1 << 14);
-			UART0_CR |= (0b1 << 14);
-		}
-		if (my_strncmp(hand, "f", 1) != 1)
-		{
-			uart_puts("only \"RTS\" or \"CTS\" can be selected \n");
-		}
+	}
+}
+void uart_setting(){
+	if(currentBaud == 9600){
+		uart_puts("Baudrates : 9600 \n");
+	}else if(currentBaud == 19200 ){
+		uart_puts("Baudrates : 19200 \n");
+	}else if(currentBaud == 38400){
+		uart_puts("Baudrates : 38400 \n");
+	}else if(currentBaud == 57600){
+		uart_puts("Baudrates : 57600 \n");
+	}else if(currentBaud == 115200){
+		uart_puts("Baudrates : 115200 \n");
+	}
+
+	if(currentDataBits == 8){
+		uart_puts("Databits : 8 \n");
+	}else if(currentDataBits == 7){
+		uart_puts("Databits : 7 \n");
+	}else if(currentDataBits == 6){
+		uart_puts("Databits : 6 \n");
+	}else if(currentDataBits == 5){
+		uart_puts("Databits : 5 \n");
+	}
+
+	if(currentStopBits == 1){
+		uart_puts("Stop bit  : 1 \n");
+
+	}else if(currentStopBits == 2){
+		uart_puts("Stop bit  : 2 \n");
+	}
+
+	if(currentParityBits == 0){
+		uart_puts("Parity bit : NONE \n");
+	}else if(currentParityBits == 1){
+		uart_puts("Parity bit : odd \n");
+	}else if(currentParityBits == 2){
+		uart_puts("Parity bit : even \n");
+	}
+
+	if(currentHandshaking == 0){
+		uart_puts("handshaking : none \n");
+
+	}else if(currentHandshaking == 1){
+		uart_puts("handshaking : cts \n");
+
+	}else if (currentHandshaking == 2){
+		uart_puts("handshaking : rts \n");
+
 	}
 }

@@ -50,15 +50,11 @@
 
 #define UART0_LCRH_FEN	(1<<4)	/* FEN = enable FIFOs */
 
-
 #define UART0_LCRH_STP2	(1<<3)	/* STP2 = enable 2 stop bits */
 // 그럼 1 스탑비트는 어떻게하지?
 
-
 #define UART0_LCRH_EPS	(1<<2)	/* EPS  = even parity select */
 #define UART0_LCRH_PEN	(1<<1)	/* PEN  = parity enable */
-
-
 
 #define UART0_LCRH_BRK	(1<<0)	/* BRK  = send break after next character */
 /* CR = Control Register */
@@ -171,3 +167,5 @@ void uart_DataBit(const char *data);
 void uart_StopBit(const char *stop);
 void uart_Parity(const char *parity);
 void uart_HandShaking(const char *hand);
+void uart_setting();
+void uart_displayMAC(unsigned int high, unsigned int low);
