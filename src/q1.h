@@ -1,0 +1,12 @@
+int my_strncmp(const char *command, const char *compare ,int index );
+void changeColor(const char *command);
+int my_strlen(const char *str);
+void printHelp(const char *command);
+char *my_strstr(const char *haystack, const char *needle);
+void clearTerminal ();
+void printInfo();
+void printRecision(int revision);
+void changeUartSetting(const char *command);
+void my_strcpy(char* str1, const char* str2);
+void my_memset(void* str, int startIndex, int strLength);
+char *tab_complete(char currentCommand[], int index);
