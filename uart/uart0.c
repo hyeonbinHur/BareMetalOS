@@ -6,7 +6,7 @@
  */
 
 int currentBaud = 115200;
-int currentDataBits = 8;
+int currentDataBits = 7;
 int currentStopBits = 1;
 int currentParityBits = 0;
 int currentHandshaking = 0;
@@ -69,18 +69,17 @@ void uart_init(const char *baud, const char *stop, const char *data, const char 
 	/* Clear pending interrupts. */
 	UART0_ICR = 0x7FF;
 
-	uart_BaudRate(baud);
-	
-
-	int devider = 16 * currentBaud;
-	double devider2 = (48000000.0 / (float)devider);
-	int intPart = (int)devider2 / 1;
-	float frPart = ((devider2 - (float)intPart) * 64) + 0.5;
-
-	UART0_IBRD = intPart;
-	UART0_FBRD = frPart;
-
 	UART0_LCRH = (1 << 4);
+
+	uart_BaudRate(baud);
+
+	// int devider = 16 * currentBaud;
+	// double devider2 = (48000000.0 / (float)devider);
+	// int intPart = (int)devider2 / 1;
+	// float frPart = ((devider2 - (float)intPart) * 64) + 0.5;
+
+	// UART0_IBRD = intPart;
+	// UART0_FBRD = frPart;
 
 	uart_StopBit(stop);
 	uart_DataBit(data);
@@ -193,37 +192,42 @@ void uart_dec(int num)
 	uart_puts(str);
 }
 
-void uart_displayMAC(unsigned int high, unsigned int low) {
-    // Start by processing the lower part first to match the original output order
-    for (int shift = 12; shift >= 0; shift -= 4) {
-        // Extract the highest 4-bit segment
-        char hex_char = (low >> shift) & 0xF;
-        // Convert numeric value to hexadecimal ASCII character
-        hex_char += (hex_char > 9) ? ('A' - 10) : '0';
-        uart_sendc(hex_char);
+void uart_displayMAC(unsigned int high, unsigned int low)
+{
+	// Start by processing the lower part first to match the original output order
+	for (int shift = 12; shift >= 0; shift -= 4)
+	{
+		// Extract the highest 4-bit segment
+		char hex_char = (low >> shift) & 0xF;
+		// Convert numeric value to hexadecimal ASCII character
+		hex_char += (hex_char > 9) ? ('A' - 10) : '0';
+		uart_sendc(hex_char);
 
-        // Insert dash at every 8 bits, except at the end
-        if (shift % 8 == 0 && shift != 0) {
-            uart_sendc(':');
-        }
-    }
+		// Insert dash at every 8 bits, except at the end
+		if (shift % 8 == 0 && shift != 0)
+		{
+			uart_sendc(':');
+		}
+	}
 
-    // Insert final dash between high and low parts
-    uart_sendc(':');
+	// Insert final dash between high and low parts
+	uart_sendc(':');
 
-    // Then process the high part
-    for (int shift = 28; shift >= 0; shift -= 4) {
-        // Extract the highest 4-bit segment
-        char hex_char = (high >> shift) & 0xF;
-        // Convert numeric value to hexadecimal ASCII character
-        hex_char += (hex_char > 9) ? ('A' - 10) : '0';
-        uart_sendc(hex_char);
+	// Then process the high part
+	for (int shift = 28; shift >= 0; shift -= 4)
+	{
+		// Extract the highest 4-bit segment
+		char hex_char = (high >> shift) & 0xF;
+		// Convert numeric value to hexadecimal ASCII character
+		hex_char += (hex_char > 9) ? ('A' - 10) : '0';
+		uart_sendc(hex_char);
 
-        // Insert dash every 8 bits
-        if (shift % 8 == 0 && shift != 0) {
-            uart_sendc(':');
-        }
-    }
+		// Insert dash every 8 bits
+		if (shift % 8 == 0 && shift != 0)
+		{
+			uart_sendc(':');
+		}
+	}
 }
 
 void uart_BaudRate(const char *baud)
@@ -231,24 +235,61 @@ void uart_BaudRate(const char *baud)
 	if (my_strncmp(baud, "9600", 4) == 1)
 	{
 		currentBaud = 9600;
+		UART0_IBRD = 312;
+		UART0_FBRD = 33;
 	}
 	else if (my_strncmp(baud, "19200", 5) == 1)
 	{
 		currentBaud = 19200;
+		UART0_IBRD = 156;
+		UART0_FBRD = 17;
 	}
 	else if (my_strncmp(baud, "38400", 5) == 1)
 	{
 		currentBaud = 38400;
+		UART0_IBRD = 78;
+		UART0_FBRD = 9;
 	}
 	else if (my_strncmp(baud, "57600", 5) == 1)
 	{
 		currentBaud = 57600;
+		UART0_IBRD = 52;
+		UART0_FBRD = 6;
 	}
 	else if (my_strncmp(baud, "115200", 6) == 1)
 	{
 		currentBaud = 115200;
+		UART0_IBRD = 26;
+		UART0_FBRD = 3;
 	}
-
+	else
+	{
+		if (currentBaud == 9600)
+		{
+			UART0_IBRD = 312;
+			UART0_FBRD = 32;
+		}
+		else if (currentBaud == 19200)
+		{
+			UART0_IBRD = 156;
+			UART0_FBRD = 16;
+		}
+		else if (currentBaud == 38400)
+		{
+			UART0_IBRD = 78;
+			UART0_FBRD = 8;
+		}
+		else if (currentBaud == 57600)
+		{
+			UART0_IBRD = 52;
+			UART0_FBRD = 6;
+		}
+		else if (currentBaud == 115200)
+		{
+			UART0_IBRD = 26;
+			UART0_FBRD = 3;
+		}
+	}
 }
 
 void uart_DataBit(const char *data)
@@ -258,42 +299,46 @@ void uart_DataBit(const char *data)
 	{
 		currentDataBits = 8;
 		UART0_LCRH &= ~(0b11 << 5);
-		UART0_LCRH |= UART0_LCRH_WLEN_8BIT;
+		UART0_LCRH |= (0b11 << 5);
 	}
 	else if (my_strncmp(data, "7", 1) == 1)
 	{
 		currentDataBits = 7;
 		UART0_LCRH &= ~(0b11 << 5);
-		UART0_LCRH |= UART0_LCRH_WLEN_7BIT;
+		UART0_LCRH |= (0b10 << 5);
 	}
 	else if (my_strncmp(data, "6", 1) == 1)
 	{
 		currentDataBits = 6;
 		UART0_LCRH &= ~(0b11 << 5);
-		UART0_LCRH |= UART0_LCRH_WLEN_6BIT;
+		UART0_LCRH &= ~(0b11 << 5);
+		UART0_LCRH |= (0b01 << 5);
 	}
 	else if (my_strncmp(data, "5", 1) == 1)
 	{
 		currentDataBits = 5;
-		UART0_LCRH |= UART0_LCRH_WLEN_5BIT;
+		UART0_LCRH |= (0b00 << 5);
 	}
 	else
 	{
 		if (currentDataBits == 8)
 		{
+			UART0_LCRH &= ~(0b11 << 5);
 			UART0_LCRH |= UART0_LCRH_WLEN_8BIT;
 		}
 		else if (currentDataBits == 7)
 		{
+			UART0_LCRH &= ~(0b11 << 5);
 			UART0_LCRH |= UART0_LCRH_WLEN_7BIT;
 		}
 		else if (currentDataBits == 6)
 		{
+			UART0_LCRH &= ~(0b11 << 5);
 			UART0_LCRH |= UART0_LCRH_WLEN_6BIT;
 		}
 		else if (currentDataBits == 5)
 		{
-
+			UART0_LCRH &= ~(0b11 << 5);
 			UART0_LCRH |= UART0_LCRH_WLEN_5BIT;
 		}
 	}
@@ -308,8 +353,8 @@ void uart_StopBit(const char *stop)
 	else if (my_strncmp(stop, "2", 1) == 1)
 	{
 		currentStopBits = 2;
-		UART0_LCRH &= ~(0b1 << 3);
-		UART0_LCRH |= UART0_LCRH_STP2;
+		// UART0_LCRH &= ~(0b1 << 3);
+		UART0_LCRH |= (0b1 << 3);
 	}
 	else
 	{
@@ -319,10 +364,9 @@ void uart_StopBit(const char *stop)
 		}
 		else if (currentStopBits == 2)
 		{
-			UART0_LCRH &= ~(0b1 << 3);
-			UART0_LCRH |= UART0_LCRH_STP2;
+			// UART0_LCRH &= ~(0b1 << 3);
+			UART0_LCRH |= (0b1 << 3);
 		}
-		
 	}
 }
 void uart_Parity(const char *parity)
@@ -359,28 +403,24 @@ void uart_Parity(const char *parity)
 		}
 		else if (currentParityBits == 0)
 		{
-
 			UART0_LCRH &= ~UART0_LCRH_PEN;
+			UART0_LCRH &= ~UART0_LCRH_EPS;
 		}
 	}
 }
 void uart_HandShaking(const char *hand)
 {
 
-	if (my_strncmp(hand, "CTS", 3) == 1)
+	if (my_strncmp(hand, "on", 3) == 1)
 	{
 		currentHandshaking = 1;
 		UART0_CR &= ~(0b1 << 15);
 		UART0_CR |= (0b1 << 15);
-	}
-	else if (my_strncmp(hand, "RTS", 3) == 1)
-	{
-		currentHandshaking = 2;
 		UART0_CR &= ~(0b1 << 14);
 		UART0_CR |= (0b1 << 14);
 	}
-	
-	else if (my_strncmp(hand, "NONE", 4) == 1)
+
+	else if (my_strncmp(hand, "off", 4) == 1)
 	{
 		currentHandshaking = 0;
 		UART0_CR &= ~(0b1 << 15);
@@ -397,61 +437,86 @@ void uart_HandShaking(const char *hand)
 		{ // only CTS
 			UART0_CR &= ~(0b1 << 15);
 			UART0_CR |= (0b1 << 15);
-		}
-		else if (currentHandshaking == 2)
-		{ // only RTS
 			UART0_CR &= ~(0b1 << 14);
 			UART0_CR |= (0b1 << 14);
 		}
-
+		else if (currentHandshaking == 2)
+		{ // only RTS
+		}
 	}
 }
-void uart_setting(){
-	if(currentBaud == 9600){
+void uart_setting()
+{
+	if (currentBaud == 9600)
+	{
 		uart_puts("Baudrates : 9600 \n");
-	}else if(currentBaud == 19200 ){
+	}
+	else if (currentBaud == 19200)
+	{
 		uart_puts("Baudrates : 19200 \n");
-	}else if(currentBaud == 38400){
+	}
+	else if (currentBaud == 38400)
+	{
 		uart_puts("Baudrates : 38400 \n");
-	}else if(currentBaud == 57600){
+	}
+	else if (currentBaud == 57600)
+	{
 		uart_puts("Baudrates : 57600 \n");
-	}else if(currentBaud == 115200){
+	}
+	else if (currentBaud == 115200)
+	{
 		uart_puts("Baudrates : 115200 \n");
 	}
 
-	if(currentDataBits == 8){
+	if (currentDataBits == 8)
+	{
 		uart_puts("Databits : 8 \n");
-	}else if(currentDataBits == 7){
+	}
+	else if (currentDataBits == 7)
+	{
 		uart_puts("Databits : 7 \n");
-	}else if(currentDataBits == 6){
+	}
+	else if (currentDataBits == 6)
+	{
 		uart_puts("Databits : 6 \n");
-	}else if(currentDataBits == 5){
+	}
+	else if (currentDataBits == 5)
+	{
 		uart_puts("Databits : 5 \n");
 	}
 
-	if(currentStopBits == 1){
+	if (currentStopBits == 1)
+	{
 		uart_puts("Stop bit  : 1 \n");
-
-	}else if(currentStopBits == 2){
+	}
+	else if (currentStopBits == 2)
+	{
 		uart_puts("Stop bit  : 2 \n");
 	}
 
-	if(currentParityBits == 0){
+	if (currentParityBits == 0)
+	{
 		uart_puts("Parity bit : NONE \n");
-	}else if(currentParityBits == 1){
+	}
+	else if (currentParityBits == 1)
+	{
 		uart_puts("Parity bit : odd \n");
-	}else if(currentParityBits == 2){
+	}
+	else if (currentParityBits == 2)
+	{
 		uart_puts("Parity bit : even \n");
 	}
 
-	if(currentHandshaking == 0){
+	if (currentHandshaking == 0)
+	{
 		uart_puts("handshaking : none \n");
-
-	}else if(currentHandshaking == 1){
-		uart_puts("handshaking : cts \n");
-
-	}else if (currentHandshaking == 2){
+	}
+	else if (currentHandshaking == 1)
+	{
+		uart_puts("handshaking : CTS/RTS \n");
+	}
+	else if (currentHandshaking == 2)
+	{
 		uart_puts("handshaking : rts \n");
-
 	}
 }

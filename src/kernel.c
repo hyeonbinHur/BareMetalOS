@@ -12,7 +12,9 @@ char history[100][100];
 
 void welComeMessage()
 {
-    uart_puts("  8888888888 8888888888 8888888888 88888888888     .d8888b.      d8888   .d8888b.   .d8888b.\n"
+    uart_puts("\n \n \n \n"
+
+              "  8888888888 8888888888 8888888888 88888888888     .d8888b.      d8888   .d8888b.   .d8888b.\n"
               "  888        888        888            888        d88P  Y88b    d8P888  d88P  Y88b d88P  Y88b \n"
               "  888        888        888            888               888   d8P 888  888    888 888    888 \n"
               "  8888888    8888888    8888888        888             .d88P  d8P  888  Y88b. d888 888    888 \n"
@@ -105,7 +107,7 @@ void cil()
                 charIndex--;
             }
         }
-        
+
         else
         {
             uart_sendc(c);
@@ -158,10 +160,9 @@ void cil()
 
 void main()
 {
-    uart_init("f","f","f","f","f");
+    uart_init("f", "f", "f", "f", "f");
 
     welComeMessage();
-    // echo everything back
     while (1)
     {
         cil();

@@ -8,8 +8,8 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": true,
-      "cwd": "c:/Users/hhb72/OneDrive/문서/GitHub/BareMetalOS/src",
-      "program": "c:/Users/hhb72/OneDrive/문서/GitHub/BareMetalOS/src/build/Debug/outDebug",
+      "cwd": ".",
+      "program": "build/Debug/outDebug",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [

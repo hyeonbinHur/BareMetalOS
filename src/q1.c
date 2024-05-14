@@ -72,7 +72,7 @@ void printHelp(const char *command)
         uart_puts(" -change databits: The changerble boundary for the databits are 8, 7, 6, 5 \n");
         uart_puts(" -change paritybits: The changerble boundary for the parity bits are none, odd, even \n");
         uart_puts(" -change stopbits: The changerble boundary for the stop bits are 1, and 2\n");
-        uart_puts(" -change handshaking: The changerble boundary for the handshaking are CTS or RTS\n");
+        uart_puts(" -change handshaking: The changerble boundary for the handshaking are on or off\n");
     }
     else
     {
@@ -108,7 +108,7 @@ void printHelp(const char *command)
                 uart_puts(" -change databits: The changerble boundary for the databits are 8, 7, 6, 5 \n");
                 uart_puts(" -change paritybits: The changerble boundary for the parity bits are none, odd, even \n");
                 uart_puts(" -change stopbits: The changerble boundary for the stop bits are 1, and 2\n");
-                uart_puts(" -change handshaking: The changerble boundary for the handshaking are CTS , RTS, and NONE\n");
+                uart_puts(" -change handshaking: The changerble boundary for the handshaking are on and off\n");
             }
         }
         else
@@ -232,7 +232,6 @@ void printInfo()
 
     if (mbox_call(ADDR(mBuf), MBOX_CH_PROP))
     {
-
         uart_puts("Board Revision: \n");
         printRecision(mBuf[5]);
         uart_puts("\n");
